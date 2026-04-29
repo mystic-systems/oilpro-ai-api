@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Oil AI PRO Terminal</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #0b0f1a;
+  color: white;
+}
+.container {
+  padding: 10px;
+}
+.card {
+  background: #1a2338;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+.signal {
+  font-size: 24px;
+  font-weight: bold;
+}
+.buy { color: #00ff99; }
+.sell { color: #ff4d4d; }
+canvas {
+  background: #11182a;
+  border-radius: 10px;
+  padding: 10px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div>🛢 OIL: <span id="oil">-</span></div>
+    <div>💱 USD: <span id="usd">-</span></div>
+  </div>
+  <div class="card">
+    <div>💵 FED: <span id="fed">-</span></div>
+    <div>🌍 DEMAND: <span id="demand">-</span></div>
+    <div>⚠️ GEO: <span id="geo">-</span></div>
+  </div>
+  <div class="card">
+    <div>📊 SCORE: <span id="score">-</span></div>
+    <div>📈 PROB: <span id="prob">-</span>%</div>
+    <div id="signal" class="signal">-</div>
+  </div>
+  <div class="card">
+    <canvas id="chart"></canvas>
+  </div>
+</div>
+
+<script>
+const API = "http://127.0.0.1:10000/signals";
+
+const ctx = document.getElementById("chart");
+let chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [
+      {
+        label: "Oil Price (USD)",
+        data: [],
+        borderColor: "#00ff99",
+        backgroundColor: "rgba(0, 255, 153, 0.05)",
+        tension: 0.2,
+        yAxisID: 'y_oil'
+      },
+      {
+        label: "",
+        data: [],
+        borderColor: "#00ff99",
+        backgroundColor: "rgba(0, 255, 153, 0.05)",
+        tension: 0.0,
+        yAxisID: 'y_score'
+      }
+
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      y_oil: {
+        type: 'linear',
+        position: 'left',
+        ticks: { color: "#00ff99", },
+        grid: { color: 'rgba(255,255,255,0.05)' },
+        title: { display: true, text: 'Oil Price', color: '#f5a623' }
+      },
+
+      x: {
+        ticks: { color: '#aaa', maxTicksLimit: 6 },
+        grid: { color: 'rgba(255,255,255,0.05)' }
+      }
+    },
+    plugins: {
+      legend: { labels: { color: '#ccc' } }
+    }
+  }
+});
+
+async function fetchData() {
+  try {
+    let res = await fetch(API);
+    let d = await res.json();
+
+    document.getElementById("oil").innerText = d.oil_price.toFixed(2);
+    document.getElementById("usd").innerText = d.usd_price.toFixed(2);
+    document.getElementById("fed").innerText = d.fed.toFixed(2);
+    document.getElementById("demand").innerText = d.demand.toFixed(2);
+    document.getElementById("geo").innerText = d.geo.toFixed(2);
+
+    let score = d.mix;
+    document.getElementById("score").innerText = score.toFixed(2);
+    let prob = 1 / (1 + Math.exp(-score));
+    document.getElementById("prob").innerText = (prob * 100).toFixed(1);
+
+    let sig = document.getElementById("signal");
+    sig.innerText = score > 0 ? "BUY" : "SELL";
+    sig.className = "signal " + (score > 0 ? "buy" : "sell");
+
+    const now = new Date().toLocaleTimeString();
+
+    chart.data.labels.push(now);
+    chart.data.datasets[0].data.push(d.oil_price);
+    
+
+    if (chart.data.labels.length > 30) {
+      chart.data.labels.shift();
+      chart.data.datasets[0].data.shift();
+      
+    }
+    chart.update();
+  } catch(e) {
+    console.log("API ERROR:", e);
+  }
+}
+
+setInterval(fetchData, 3000);
+fetchData();
+</script>
+</body>
+</html>
