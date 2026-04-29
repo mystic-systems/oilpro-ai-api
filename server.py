@@ -14,12 +14,24 @@ def home():
 # -----------------------
 
 def get_usd():
-    data = yf.download("DX-Y.NYB", period="1d", interval="5m")
-    return float(data["Close"].iloc[-1]) if len(data) else 100
+    try:
+        data = yf.download("DX-Y.NYB", period="1d", interval="5m")
+        if data.empty:
+            return 100.0
+
+        return float(data["Close"].iloc[-1].item())
+    except:
+        return 100.0
 
 def get_oil():
-    data = yf.download("CL=F", period="1d", interval="5m")
-    return float(data["Close"].iloc[-1]) if len(data) else 70
+    try:
+        data = yf.download("CL=F", period="1d", interval="5m")
+        if data.empty:
+            return 70.0
+
+        return float(data["Close"].iloc[-1].item())
+    except:
+        return 70.0
 
 # -----------------------
 # FACTORS
