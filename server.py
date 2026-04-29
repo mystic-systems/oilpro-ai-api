@@ -50,32 +50,36 @@ def score_geo():
 # API
 # -----------------------
 
+
 @app.route("/signals")
 def signals():
+    try:
+        oil = get_oil()
+        usd = get_usd()
 
-    oil = get_oil()
-    usd = get_usd()
+        opec = score_opec(oil)
+        usd_s = score_usd(usd)
+        fed = score_fed()
+        demand = score_demand(oil)
+        geo = score_geo()
 
-    opec = score_opec(oil)
-    usd_s = score_usd(usd)
-    fed = score_fed()
-    demand = score_demand(oil)
-    geo = score_geo()
+        mix = opec + usd_s + fed + demand + geo
 
-    mix = opec + usd_s + fed + demand + geo
+        return jsonify({
+            "oil_price": oil,
+            "usd_price": usd,
+            "opec": round(opec, 2),
+            "usd": round(usd_s, 2),
+            "fed": round(fed, 2),
+            "demand": round(demand, 2),
+            "geo": round(geo, 2),
+            "mix": round(mix, 2)
+        })
 
-    return jsonify({
-        "oil_price": oil,
-        "usd_price": usd,
-
-        "opec": round(opec, 2),
-        "usd": round(usd_s, 2),
-        "fed": round(fed, 2),
-        "demand": round(demand, 2),
-        "geo": round(geo, 2),
-
-        "mix": round(mix, 2)
-    })
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
